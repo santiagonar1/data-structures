@@ -155,6 +155,7 @@ namespace ds {
             _capacity = std::move(other._capacity);
             _values = other._values;
             other._values = nullptr;
+            return *this;
         }
 
         Vector<T> &operator=(std::initializer_list<T> list) {
