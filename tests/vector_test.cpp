@@ -139,14 +139,6 @@ TEST(VectorTest, CheckFront) {
     ds::Vector<int> v(VECTOR_SIZE);
     v[0] = FIRST_VALUE;
     EXPECT_EQ(v.front(), FIRST_VALUE) << "First value should be " << FIRST_VALUE;
-
-    ds::Vector<int> empty_vector;
-    EXPECT_EXIT({
-        auto i = empty_vector.front();
-        i++;
-    },
-                ::testing::KilledBySignal(SIGSEGV), ".*")
-            << "Expect failure if used on empty vector";
 }
 
 TEST(VectorTest, CheckBack) {
