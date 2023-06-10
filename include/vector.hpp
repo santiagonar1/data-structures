@@ -38,7 +38,7 @@ namespace ds {
         }
 
         Vector(std::initializer_list<T> init) : Vector(init.size()) { // NOLINT(cppcoreguidelines-pro-type-member-init)
-            std::copy(init.begin(), init.end(), begin());
+                    std::copy(init.begin(), init.end(), begin());
         }
 
         template<std::input_iterator InputIt>
