@@ -36,6 +36,9 @@ TEST(VectorTest, Constructor) {
     for (int i = 0; i < v_from.size(); i++) {
         EXPECT_EQ(v_from[i], v_to_with_range[i]) << "Expected value " << v_from[i];
     }
+
+    ds::Vector<int> v_to_copy_constructor(v_from);
+    EXPECT_EQ(v_to_copy_constructor, v_from);
 }
 
 TEST(VectorTest, PushElements) {

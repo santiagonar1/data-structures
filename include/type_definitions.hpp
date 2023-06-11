@@ -9,7 +9,7 @@ namespace types {
     using size_t = unsigned long long;
     // TODO: Not sure about this definition
     using intptr_t = long int;
-    using ptrdiff_t = ::intptr_t;
+    using ptrdiff_t = intptr_t;
 } // namespace types
 
 #endif //DS_TYPE_DEFINITIONS_HPP

@@ -5,6 +5,10 @@
 #ifndef DS_VECTOR_HPP
 #define DS_VECTOR_HPP
 
+#include <algorithm>
+#include <iterator>
+#include <limits>
+#include <stdexcept>
 #include <utility>
 
 #include "contiguous_iterator.hpp"
@@ -30,10 +34,11 @@ namespace ds {
         explicit Vector(size_type size, const T &value = T()) : _size(size), _capacity(size), _values(nullptr) {
             // TODO: Look for a cleaner way of doing this; otherwise we cannot use all values.
             // Also, this requires knowledge of what size_t is, which creates coupling.
-            if (static_cast<long long>(size) < 0)
+            if (static_cast<long long>(size) < 0) {
                 throw std::length_error("Creating vector with negative number");
+            }
 
-            _values = new T[_size];
+            _values = new T[_size]; // NOLINT(cppcoreguidelines-owning-memory)
             std::fill(begin(), end(), value);
         }
 
@@ -44,6 +49,14 @@ namespace ds {
         template<std::input_iterator InputIt>
         Vector(InputIt first, InputIt last) : Vector(std::distance(first, last)) { // NOLINT(cppcoreguidelines-pro-type-member-init)
             std::copy(first, last, begin());
+        }
+
+        Vector(const Vector &other) : Vector(other.size()) { // NOLINT(cppcoreguidelines-pro-type-member-init)
+            std::copy(other.cbegin(), other.cend(), begin());
+        }
+
+        Vector(Vector &&other) noexcept : _size(std::move(other._size)), _capacity(std::move(other._capacity)), _values(other._values) {
+            other._values = nullptr;
         }
 
         ~Vector() {
@@ -79,69 +92,74 @@ namespace ds {
             std::copy(ilist.begin(), ilist.end(), begin());
         }
 
-        reference at(size_type pos) {
+        auto at(size_type pos) {
             if (pos >= _size) {
                 throw std::out_of_range("id is out of range");
             }
 
-            return _values[pos];
+            return _values[pos]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        reference back() {
-            return _values[_size - 1];
+        auto back() {
+            return _values[_size - 1]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        iterator begin() {
-            return iterator(&_values[0]);
+        auto begin() {
+            return iterator(&_values[0]); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        [[nodiscard]] size_type capacity() const {
+        [[nodiscard]] auto capacity() const {
             return _capacity;
         }
 
-        const_iterator cbegin() const {
-            return const_iterator(&_values[0]);
+        auto cbegin() const {
+            return const_iterator(&_values[0]); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        const_iterator cend() const {
-            return const_iterator(&_values[_size]);
+        auto cend() const {
+            return const_iterator(&_values[_size]); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
         void clear() {
             _size = 0;
         }
 
-        T *data() {
+        auto data() {
             return _values;
         }
 
-        bool empty() {
+        auto empty() {
             return begin() == end();
         }
 
-        iterator end() {
-            return iterator(&_values[_size]);
+        auto end() {
+            return iterator(&_values[_size]); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        reference front() {
-            return _values[0];
+        auto front() {
+            return _values[0]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        [[nodiscard]] size_type max_size() const {
+        [[nodiscard]] auto max_size() const {
             return std::numeric_limits<difference_type>::max() / sizeof(T);
         }
 
-        reference operator[](size_type pos) {
-            return _values[pos];
+        auto operator[](size_type pos) -> reference {
+            return _values[pos]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        const_reference operator[](size_type pos) const {
-            return _values[pos];
+        auto operator[](size_type pos) const -> const_reference {
+            return _values[pos]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         }
 
-        Vector<T> &operator=(const Vector<T> &other) {
-            if (not can_store(other.size()))
+        auto operator=(const Vector<T> &other) -> Vector<T> & {
+            if (this == &other) {
+                return *this;
+            }
+
+            if (not can_store(other.size())) {
                 resize(other.size());
+            }
 
             _size = other.size();
             // TODO: Once we have cbegin() and cend(), replace by std::copy
@@ -150,7 +168,7 @@ namespace ds {
             return *this;
         }
 
-        Vector<T> &operator=(Vector<T> &&other) {
+        auto operator=(Vector<T> &&other) noexcept -> Vector<T> & {
             _size = std::move(other._size);
             _capacity = std::move(other._capacity);
             _values = other._values;
@@ -158,9 +176,11 @@ namespace ds {
             return *this;
         }
 
-        Vector<T> &operator=(std::initializer_list<T> list) {
-            if (_capacity < list.size())
+        auto operator=(std::initializer_list<T> list) -> Vector<T> & {
+            if (_capacity < list.size()) {
                 resize(list.size());
+            }
+
 
             _size = list.size();
             std::copy(list.begin(), list.end(), begin());
@@ -169,30 +189,34 @@ namespace ds {
         }
 
         void pop_back() {
-            if (_size == 0)
+            if (_size == 0) {
                 return;
+            }
 
             _size--;
         }
 
         void push_back(const T &value) {
-            if (not can_store_more_elements())
+            if (not can_store_more_elements()) {
                 expand();
+            }
 
-            _values[_size] = value;
+            _values[_size] = value; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             _size++;
         }
 
         void reserve(size_type new_cap) {
             // TODO: Look for a cleaner way of doing this; otherwise we cannot use all values.
             // Also, this requires knowledge of what size_t is, which creates coupling.
-            if (static_cast<long long>(new_cap) < 0)
+            if (static_cast<long long>(new_cap) < 0) {
                 throw std::length_error("New capacity has to be positive");
+            }
 
             // TODO: Throw length_error if new_cap > max_capacity()
 
-            if (new_cap <= _capacity)
+            if (new_cap <= _capacity) {
                 return;
+            }
 
             resize(new_cap);
         }
@@ -201,7 +225,7 @@ namespace ds {
             resize(_size);
         }
 
-        [[nodiscard]] size_type size() const {
+        [[nodiscard]] auto size() const {
             return _size;
         }
 
@@ -210,11 +234,11 @@ namespace ds {
         size_type _size;
         T *_values;
 
-        inline bool can_store_more_elements() {
+        inline auto can_store_more_elements() {
             return _capacity > _size;
         }
 
-        inline bool can_store(size_type num_elements) {
+        inline auto can_store(size_type num_elements) {
             return _capacity >= num_elements;
         }
 
@@ -224,33 +248,37 @@ namespace ds {
         }
 
         void resize(size_type new_capacity) {
-            if (new_capacity < _size)
+            if (new_capacity < _size) {
                 throw std::length_error("New capacity must be larger than current _size");
+            }
 
-            if (new_capacity == _capacity)
+            if (new_capacity == _capacity) {
                 return;
+            }
 
-            T *new_storage = new T[new_capacity];
+            T *new_storage = new T[new_capacity]; // NOLINT(cppcoreguidelines-owning-memory)
 
             for (size_type i = 0; i < _size; i++) {
-                new_storage[i] = _values[i];
+                new_storage[i] = _values[i]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             }
 
             std::swap(_values, new_storage);
             _capacity = new_capacity;
 
-            delete[] new_storage;
+            delete[] new_storage; // NOLINT(cppcoreguidelines-owning-memory)
         }
     };
 
     template<typename T>
-    bool operator==(const Vector<T> &lhs, const Vector<T> &rhs) {
-        if (lhs.size() != rhs.size())
+    auto operator==(const Vector<T> &lhs, const Vector<T> &rhs) {
+        if (lhs.size() != rhs.size()) {
             return false;
+        }
 
         for (int i = 0; i < lhs.size(); i++) {
-            if (lhs[i] != rhs[i])
+            if (lhs[i] != rhs[i]) {
                 return false;
+            }
         }
 
         return true;
